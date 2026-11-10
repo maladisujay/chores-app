@@ -2,15 +2,8 @@ import { CHORE_ICONS } from '../icons/choreIcons.js'
 import Icon from '../icons/Icon.jsx'
 import { haptic } from '../lib/haptics.js'
 
-export function initials(name = '') {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  if (!parts.length) return '?'
-  if (parts.length === 1) return [...parts[0]].slice(0, 2).join('').toUpperCase()
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-}
-
-// Pick white or near-black initials so they stay readable on every member color
-// (≥3:1 for the large, bold initials).
+// Contact-style avatar: a default profile silhouette on the member's color.
+// The silhouette is white or near-black, whichever stays readable (≥3:1) on that color.
 const inkCache = {}
 function inkFor(hex) {
   if (inkCache[hex]) return inkCache[hex]
@@ -19,7 +12,7 @@ function inkFor(hex) {
     return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
   }
   const L = 0.2126 * lin(1) + 0.7152 * lin(3) + 0.0722 * lin(5)
-  return (inkCache[hex] = 1.05 / (L + 0.05) >= 3 ? '#fff' : 'rgba(0,0,0,0.82)')
+  return (inkCache[hex] = 1.05 / (L + 0.05) >= 3 ? '#fff' : 'rgba(0,0,0,0.78)')
 }
 
 export function Avatar({ member, size = 36, ring = false, className = '' }) {
@@ -27,10 +20,15 @@ export function Avatar({ member, size = 36, ring = false, className = '' }) {
   return (
     <span
       className={`avatar ${ring ? 'avatar-ring' : ''} ${member?.status === 'removed' ? 'avatar-gone' : ''} ${className}`}
-      style={{ '--c': color, '--ink': inkFor(color), width: size, height: size, fontSize: size * 0.38 }}
+      style={{ '--c': color, '--ink': inkFor(color), width: size, height: size }}
+      role="img"
+      aria-label={member?.name || 'Member'}
       title={member?.name}
     >
-      {initials(member?.name)}
+      <svg viewBox="0 0 32 32" width="100%" height="100%" aria-hidden="true">
+        <circle cx="16" cy="12.2" r="5.6" fill="currentColor" />
+        <path d="M5.6 27.4c1.3-5.2 5.4-8.3 10.4-8.3s9.1 3.1 10.4 8.3A15.9 15.9 0 0 1 16 32a15.9 15.9 0 0 1-10.4-4.6z" fill="currentColor" />
+      </svg>
     </span>
   )
 }
