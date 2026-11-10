@@ -241,7 +241,7 @@ function PhotoViewer({ photo, onClose }) {
     <div className={`viewer ${shown ? 'shown' : ''}`} onClick={dismiss}>
       <img src={p.url} alt={p.label} />
       <span className="viewer-label">{p.label}</span>
-      <button className="viewer-close icon-btn glass-btn" aria-label="Close"><Icon name="x" size={20} stroke={2.4} /></button>
+      <button className="viewer-close icon-btn lg" aria-label="Close"><Icon name="x" size={20} stroke={2.4} /></button>
     </div>,
     document.body,
   )

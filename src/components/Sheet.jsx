@@ -81,7 +81,7 @@ export default function Sheet({ open, onClose, title, children, footer, classNam
       <div className="sheet-backdrop" onClick={dismiss} />
       <div
         ref={panel}
-        className={`sheet ${tall ? 'sheet-tall' : ''} ${className}`}
+        className={`sheet lg ${tall ? 'sheet-tall' : ''} ${className}`}
         style={dy ? { transform: `translateY(${dy}px)`, transition: 'none' } : undefined}
         role="dialog"
         aria-modal="true"
@@ -90,7 +90,7 @@ export default function Sheet({ open, onClose, title, children, footer, classNam
         <div className="sheet-head" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
           <span className="grabber" />
           <div className="sheet-titlebar">
-            <button className="icon-btn glass-btn" onClick={dismiss} aria-label="Close">
+            <button className="icon-btn lg" onClick={dismiss} aria-label="Close">
               <Icon name="x" size={18} stroke={2.4} />
             </button>
             <h2>{title}</h2>
@@ -108,19 +108,19 @@ export default function Sheet({ open, onClose, title, children, footer, classNam
 // Full-screen pushed page (slides in from the right) for owner tools.
 export function Page({ open, onClose, title, children, right }) {
   const { mounted, shown, dismiss } = useOverlay(open, onClose)
+  const [scrolled, setScrolled] = useState(false)
   if (!mounted) return null
   return createPortal(
     <div className={`page-root ${shown ? 'shown' : ''}`}>
       <div className="page-bg" />
-      <header className="page-nav">
-        <button className="back-btn" onClick={dismiss}>
-          <Icon name="chevronL" size={24} stroke={2.4} />
-          <span>Back</span>
+      <header className={`page-nav ${scrolled ? 'scrolled' : ''}`}>
+        <button className="icon-btn lg back-btn" onClick={dismiss} aria-label="Back">
+          <Icon name="chevronL" size={22} stroke={2.4} />
         </button>
         <h1>{title}</h1>
         <div className="page-nav-right">{right}</div>
       </header>
-      <div className="page-body">{children}</div>
+      <div className="page-body" onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 4)}>{children}</div>
     </div>,
     document.body,
   )

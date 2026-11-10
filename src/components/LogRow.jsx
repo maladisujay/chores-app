@@ -19,7 +19,7 @@ export default function LogRow({ log, onClick, showDate }) {
       <span className="log-main">
         <span className="log-title">{log.task_name}</span>
         <span className="log-meta">
-          <span className="log-who" style={{ color: m?.color }}>{m?.name || 'Former member'}</span>
+          <span className="log-who">{m?.name || 'Former member'}</span>
           <span className="dot-sep">·</span>
           {showDate ? new Date(log.done_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' : ''}
           {fmtTime(log.done_at)}

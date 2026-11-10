@@ -9,12 +9,25 @@ export function initials(name = '') {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
+// Pick white or near-black initials so they stay readable on every member color
+// (≥3:1 for the large, bold initials).
+const inkCache = {}
+function inkFor(hex) {
+  if (inkCache[hex]) return inkCache[hex]
+  const lin = (i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  }
+  const L = 0.2126 * lin(1) + 0.7152 * lin(3) + 0.0722 * lin(5)
+  return (inkCache[hex] = 1.05 / (L + 0.05) >= 3 ? '#fff' : 'rgba(0,0,0,0.82)')
+}
+
 export function Avatar({ member, size = 36, ring = false, className = '' }) {
-  const color = member?.color || '#8E8E93'
+  const color = /^#[0-9a-f]{6}$/i.test(member?.color || '') ? member.color : '#8E8E93'
   return (
     <span
       className={`avatar ${ring ? 'avatar-ring' : ''} ${member?.status === 'removed' ? 'avatar-gone' : ''} ${className}`}
-      style={{ '--c': color, width: size, height: size, fontSize: size * 0.38 }}
+      style={{ '--c': color, '--ink': inkFor(color), width: size, height: size, fontSize: size * 0.38 }}
       title={member?.name}
     >
       {initials(member?.name)}

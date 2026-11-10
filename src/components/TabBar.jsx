@@ -6,13 +6,13 @@ const TABS = [
   { id: 'calendar', icon: 'calendar', label: 'Calendar' },
   null,
   { id: 'ranks', icon: 'trophy', label: 'Leaderboard' },
-  { id: 'house', icon: 'house', label: 'Home Hub' },
+  { id: 'house', icon: 'house', label: 'House' },
 ]
 
 export default function TabBar({ tab, onTab, onLog, badge }) {
   return (
     <nav className="tabbar-wrap" aria-label="Main">
-      <div className="tabbar glass-heavy">
+      <div className="tabbar lg">
         {TABS.map((t, i) =>
           t ? (
             <button
@@ -25,7 +25,7 @@ export default function TabBar({ tab, onTab, onLog, badge }) {
               aria-current={tab === t.id ? 'page' : undefined}
             >
               <span className="tab-ico">
-                <Icon name={t.icon} size={24} stroke={tab === t.id ? 2.3 : 1.9} />
+                <Icon name={tab === t.id ? t.icon + 'Fill' : t.icon} size={25} stroke={1.9} />
                 {t.id === 'house' && badge > 0 && <span className="badge">{badge}</span>}
               </span>
               <span className="tab-label">{t.id === 'house' ? 'House' : t.label === 'Leaderboard' ? 'Ranks' : t.label}</span>
@@ -36,7 +36,7 @@ export default function TabBar({ tab, onTab, onLog, badge }) {
         )}
       </div>
       <button
-        className="fab"
+        className="fab lg lg-tinted"
         onClick={() => {
           haptic('medium')
           onLog()

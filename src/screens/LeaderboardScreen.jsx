@@ -40,8 +40,8 @@ export default function LeaderboardScreen({ onOpenLog }) {
           <section className="podium">
             {podium.map((r, i) =>
               r ? (
-                <button key={r.member.id} className={`podium-col p${r.rank}`} onClick={() => setStatsFor(r.member.id)}>
-                  {r.rank === 1 && <Icon name="crown" size={26} className="crown" stroke={2} />}
+                <button key={r.member.id} className={`podium-col p${[2, 1, 3][i]}`} onClick={() => setStatsFor(r.member.id)}>
+                  {i === 1 && <Icon name="crown" size={26} className="crown" stroke={2} />}
                   <Avatar member={r.member} size={i === 1 ? 72 : 58} ring />
                   <span className="podium-name">{r.member.name}</span>
                   <span className="podium-pts">{r.points}</span>

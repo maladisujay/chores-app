@@ -20,7 +20,7 @@ export default function Welcome({ backend, joinCode, onDone, onCancel }) {
   return (
     <div className="welcome">
       {onCancel && (
-        <button className="welcome-close glass-btn icon-btn" onClick={onCancel} aria-label="Back">
+        <button className="welcome-close lg icon-btn" onClick={onCancel} aria-label="Back">
           <Icon name="x" size={18} stroke={2.4} />
         </button>
       )}
@@ -31,7 +31,7 @@ export default function Welcome({ backend, joinCode, onDone, onCancel }) {
               <ChoreIcon icon={k} size={54} />
             </span>
           ))}
-          <div className="hero-core glass-heavy">
+          <div className="hero-core lg">
             <img src="icon.svg" alt="" />
           </div>
         </div>
@@ -61,7 +61,7 @@ function FlowShell({ title, step, steps, onBack, children, footer }) {
   return (
     <div className="flow">
       <header className="flow-head">
-        <button className="icon-btn glass-btn" onClick={onBack} aria-label="Back">
+        <button className="icon-btn lg" onClick={onBack} aria-label="Back">
           <Icon name="chevronL" size={20} stroke={2.4} />
         </button>
         {steps > 1 && (

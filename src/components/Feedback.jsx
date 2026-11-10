@@ -41,7 +41,7 @@ export function FeedbackProvider({ children }) {
       {createPortal(
         <div className="toasts">
           {toasts.map((t) => (
-            <div key={t.id} className={`toast glass toast-${t.kind}`}>
+            <div key={t.id} className={`toast lg toast-${t.kind}`}>
               <Icon name={t.kind === 'error' ? 'alert' : t.kind === 'success' ? 'check' : 'info'} size={18} stroke={2.4} />
               <span>{t.msg}</span>
             </div>
@@ -53,7 +53,7 @@ export function FeedbackProvider({ children }) {
         createPortal(
           <div className="dialog-root" onClick={() => close(dialog.kind === 'prompt' ? null : false)}>
             <form
-              className="dialog"
+              className="dialog lg"
               onClick={(e) => e.stopPropagation()}
               onSubmit={(e) => {
                 e.preventDefault()

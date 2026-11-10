@@ -17,7 +17,7 @@ export default function DemoBar({ backend, houseId, onSwitched }) {
         <Icon name="swap" size={14} stroke={2.4} /> Demo
       </button>
       {open && (
-        <div className="demobar-panel glass-heavy">
+        <div className="demobar-panel lg">
           <p className="demobar-note">Demo mode — data lives only in this browser. Switch device identity to act as another roommate:</p>
           {people.map((p) => (
             <button key={p.user_id} className={`demobar-row ${p.user_id === me ? 'cur' : ''}`} onClick={() => { backend.switchUser(p.user_id); onSwitched() }}>

@@ -159,10 +159,10 @@ export default function HouseScreen({ houses, onSwitchHouse, onAddHouse, onLeft,
       <ApprovalsPage open={page === 'approvals'} onClose={() => setPage(null)} />
       <ChoresList open={page === 'viewChores'} onClose={() => setPage(null)} />
       <Page open={page === 'members'} onClose={() => setPage(null)} title="Roommates" right={isOwner && (
-        <button className="nav-action" onClick={async () => {
+        <button className="icon-btn lg nav-action" aria-label="Add roommate" onClick={async () => {
           const n = await prompt({ title: 'Add a roommate', message: 'They’ll pick this name when joining with the code.', placeholder: 'Name', confirmText: 'Add', maxLength: 24 })
           if (n) run(() => h.call('add_member', { p_house: house.id, p_name: n }), `${n} added`)
-        }}><Icon name="plus" size={24} stroke={2.4} /></button>
+        }}><Icon name="plus" size={20} stroke={2.4} /></button>
       )}>
         <MembersList onPick={isOwner ? setMember : null} />
       </Page>

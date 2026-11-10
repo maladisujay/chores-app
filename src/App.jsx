@@ -140,9 +140,16 @@ function Shell(props) {
   const [logTask, setLogTask] = useState(null)
   const [detail, setDetail] = useState(null)
 
+  const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [tab])
+  useEffect(() => {
+    const on = () => setScrolled(window.scrollY > 52)
+    on()
+    window.addEventListener('scroll', on, { passive: true })
+    return () => window.removeEventListener('scroll', on)
+  }, [])
 
   if (h.loading) {
     return (
@@ -165,6 +172,9 @@ function Shell(props) {
 
   return (
     <div className="app">
+      <div className={`edge-top ${scrolled ? 'on' : ''}`} aria-hidden={!scrolled}>
+        <span className="edge-title">{{ home: h.house.name, calendar: 'Calendar', ranks: 'Leaderboard', house: 'House' }[tab]}</span>
+      </div>
       <main className="screen" key={tab}>
         {tab === 'home' && <HomeScreen onOpenLog={openLog} onGo={setTab} onQuickLog={(id) => { setLogTask(id); setLogOpen(true) }} />}
         {tab === 'calendar' && <CalendarScreen onOpenLog={openLog} />}
