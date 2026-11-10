@@ -1,0 +1,20 @@
+# Supabase pauses free projects after ~7 days without activity. If your home
+# goes quiet (holidays!), this pings the database twice a week to keep it awake.
+name: Keep Supabase awake
+
+on:
+  schedule:
+    - cron: '17 9 * * 1,4'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ping
+        run: |
+          URL=$(grep -oE "SUPABASE_URL = '[^']+'" src/config.js | cut -d"'" -f2)
+          KEY=$(grep -oE "SUPABASE_ANON_KEY = '[^']*'" src/config.js | cut -d"'" -f2)
+          if [ -z "$KEY" ]; then echo "No Supabase key configured; skipping."; exit 0; fi
+          curl -fsS -X POST "$URL/rest/v1/rpc/ping" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" -d '{}'
