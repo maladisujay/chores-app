@@ -1,5 +1,6 @@
 const MESSAGES = {
   NOT_SIGNED_IN: 'Your session expired. Please reload the app.',
+  SESSION_LOST: 'Your session was interrupted. Please reload the page and try again.',
   NOT_MEMBER: "You're no longer a member of this home.",
   OWNER_ONLY: 'Only the home owner can do that.',
   HOUSE_NOT_FOUND: 'No home found with that code. Check it and try again.',

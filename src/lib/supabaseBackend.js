@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, processLock } from '@supabase/supabase-js'
 import { toAppError } from './errors.js'
 
 const BUCKET = 'chore-photos'
@@ -6,9 +6,33 @@ const TABLES = ['logs', 'log_votes', 'change_requests', 'tasks', 'sections', 'me
 
 export function createSupabaseBackend(url, key) {
   const sb = createClient(url, key, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: 'chores-auth' },
+    // processLock: the default cross-tab navigator lock can get stuck on iOS Safari after
+    // app switching, and then requests silently go out signed-out (401 / permission denied).
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: 'chores-auth', lock: processLock },
   })
   const urlCache = new Map() // path -> { url, exp }
+
+  // Keep the latest session in memory so it can be restored if storage reads fail.
+  let lastSession = null
+  sb.auth.onAuthStateChange((_event, session) => { if (session) lastSession = session })
+
+  const signedOutError = (e) =>
+    e && (e.code === '42501' || e.code === 'PGRST301' || e.code === 'PGRST303' || /permission denied for function|JWT|not authenticated/i.test(e.message || ''))
+
+  // The request went out without a valid user. Restore the session, or as a last resort start a new one.
+  async function recoverSession() {
+    const { data } = await sb.auth.getSession()
+    if (data.session) {
+      const { data: r } = await sb.auth.refreshSession()
+      if (r?.session) return
+    }
+    if (lastSession?.refresh_token) {
+      const { data: r, error } = await sb.auth.setSession({ access_token: lastSession.access_token, refresh_token: lastSession.refresh_token })
+      if (!error && r?.session) return
+    }
+    const { error } = await sb.auth.signInAnonymously()
+    if (error) throw toAppError(error)
+  }
 
   return {
     mode: 'supabase',
@@ -23,7 +47,12 @@ export function createSupabaseBackend(url, key) {
       return d.user.id
     },
     async rpc(fn, args = {}) {
-      const { data, error } = await sb.rpc(fn, args)
+      let { data, error } = await sb.rpc(fn, args)
+      if (error && signedOutError(error)) {
+        await recoverSession()
+        ;({ data, error } = await sb.rpc(fn, args))
+        if (error && signedOutError(error)) throw toAppError('SESSION_LOST')
+      }
       if (error) throw toAppError(error)
       return data
     },
