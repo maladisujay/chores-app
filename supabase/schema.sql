@@ -989,6 +989,166 @@ create or replace function public.ping()
 returns text language sql stable as $$ select 'ok'::text $$;
 
 -- ---------------------------------------------------------------------------
+-- Reports: anyone can flag something sus (undone chore, mess, damage...) with
+-- photos. Reports can be anonymous: the real author lives in report_authors,
+-- which has no read policy, so it never leaves the database.
+-- ---------------------------------------------------------------------------
+create table if not exists public.reports (
+  id               uuid primary key default gen_random_uuid(),
+  house_id         uuid not null references public.houses(id) on delete cascade,
+  shown_reporter   uuid references public.members(id) on delete set null, -- null when anonymous
+  anonymous        boolean not null default false,
+  category         text not null default 'other' check (category in ('undone', 'mess', 'damage', 'supplies', 'other')),
+  title            text not null check (char_length(title) between 1 and 80),
+  details          text check (details is null or char_length(details) <= 500),
+  about_member     uuid references public.members(id) on delete set null,
+  task_id          uuid references public.tasks(id) on delete set null,
+  photos           text[] not null default '{}' check (coalesce(array_length(photos, 1), 0) <= 4),
+  status           text not null default 'open' check (status in ('open', 'resolved')),
+  resolved_by      uuid references public.members(id) on delete set null,
+  resolved_at      timestamptz,
+  resolution_note  text check (resolution_note is null or char_length(resolution_note) <= 280),
+  resolution_photo text,
+  created_at       timestamptz not null default now()
+);
+create index if not exists reports_house_idx on public.reports (house_id, created_at desc);
+
+create table if not exists public.report_authors (
+  report_id uuid primary key references public.reports(id) on delete cascade,
+  member_id uuid not null references public.members(id) on delete cascade
+);
+
+create table if not exists public.report_agrees (
+  report_id  uuid not null references public.reports(id) on delete cascade,
+  member_id  uuid not null references public.members(id) on delete cascade,
+  house_id   uuid not null references public.houses(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (report_id, member_id)
+);
+
+create or replace function public._report_author(p_report uuid)
+returns uuid language sql stable security definer set search_path = public as $$
+  select member_id from report_authors where report_id = p_report;
+$$;
+
+create or replace function public.create_report(
+  p_house uuid, p_category text, p_title text, p_details text,
+  p_about uuid, p_task uuid, p_photos jsonb, p_anonymous boolean
+) returns uuid language plpgsql security definer set search_path = public as $$
+declare me members; v_id uuid; v_photos text[] := '{}'; ph text;
+begin
+  me := _me(p_house);
+  if _clean(p_title) is null then raise exception 'TITLE_REQUIRED'; end if;
+  if coalesce(p_category, 'other') not in ('undone', 'mess', 'damage', 'supplies', 'other') then raise exception 'BAD_REQUEST'; end if;
+  if p_about is not null and not exists (select 1 from members where id = p_about and house_id = p_house and status = 'active') then
+    raise exception 'MEMBER_NOT_FOUND';
+  end if;
+  if p_task is not null and not exists (select 1 from tasks where id = p_task and house_id = p_house) then
+    raise exception 'TASK_NOT_FOUND';
+  end if;
+  for ph in select jsonb_array_elements_text(coalesce(p_photos, '[]'::jsonb)) loop
+    perform _check_path(p_house, ph);
+    v_photos := v_photos || ph;
+  end loop;
+  if coalesce(array_length(v_photos, 1), 0) > 4 then raise exception 'TOO_MANY_PHOTOS'; end if;
+  if (select count(*) from reports r join report_authors a on a.report_id = r.id
+       where a.member_id = me.id and r.created_at > now() - interval '1 hour') >= 10 then
+    raise exception 'SLOW_DOWN';
+  end if;
+  insert into reports (house_id, shown_reporter, anonymous, category, title, details, about_member, task_id, photos)
+  values (p_house, case when coalesce(p_anonymous, false) then null else me.id end, coalesce(p_anonymous, false),
+          coalesce(p_category, 'other'), left(_clean(p_title), 80), left(_clean(p_details), 500), p_about, p_task, v_photos)
+  returning id into v_id;
+  insert into report_authors (report_id, member_id) values (v_id, me.id);
+  return v_id;
+end $$;
+
+create or replace function public.get_reports(p_house uuid)
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare me members;
+begin
+  me := _me(p_house);
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'id', r.id, 'reporter_id', r.shown_reporter, 'anonymous', r.anonymous,
+      'mine', a.member_id = me.id,
+      'category', r.category, 'title', r.title, 'details', r.details,
+      'about_member', r.about_member, 'task_id', r.task_id, 'photos', to_jsonb(r.photos),
+      'status', r.status, 'resolved_by', r.resolved_by, 'resolved_at', r.resolved_at,
+      'resolution_note', r.resolution_note, 'resolution_photo', r.resolution_photo,
+      'created_at', r.created_at,
+      'agrees', coalesce((select jsonb_agg(g.member_id) from report_agrees g where g.report_id = r.id), '[]'::jsonb)
+    ) order by (r.status = 'open') desc, r.created_at desc)
+    from reports r join report_authors a on a.report_id = r.id
+    where r.house_id = p_house
+  ), '[]'::jsonb);
+end $$;
+
+create or replace function public.agree_report(p_report uuid, p_agree boolean)
+returns int language plpgsql security definer set search_path = public as $$
+declare r reports; me members; n int;
+begin
+  select * into r from reports where id = p_report;
+  if not found then raise exception 'REPORT_NOT_FOUND'; end if;
+  me := _me(r.house_id);
+  if _report_author(r.id) = me.id or r.about_member = me.id then raise exception 'CANT_AGREE_OWN'; end if;
+  if r.status <> 'open' then raise exception 'REPORT_CLOSED'; end if;
+  if p_agree then
+    insert into report_agrees (report_id, member_id, house_id) values (r.id, me.id, r.house_id) on conflict do nothing;
+  else
+    delete from report_agrees where report_id = r.id and member_id = me.id;
+  end if;
+  select count(*) into n from report_agrees where report_id = r.id;
+  return n;
+end $$;
+
+-- The reporter, the person it's about, or the owner can resolve it.
+create or replace function public.resolve_report(p_report uuid, p_note text, p_photo text)
+returns void language plpgsql security definer set search_path = public as $$
+declare r reports; me members;
+begin
+  select * into r from reports where id = p_report for update;
+  if not found then raise exception 'REPORT_NOT_FOUND'; end if;
+  me := _me(r.house_id);
+  if me.role <> 'owner' and me.id is distinct from _report_author(r.id) and me.id is distinct from r.about_member then
+    raise exception 'NOT_ALLOWED';
+  end if;
+  if r.status = 'resolved' then raise exception 'REPORT_CLOSED'; end if;
+  perform _check_path(r.house_id, p_photo);
+  update reports set status = 'resolved', resolved_by = me.id, resolved_at = now(),
+         resolution_note = left(_clean(p_note), 280), resolution_photo = p_photo
+   where id = r.id;
+end $$;
+
+-- Reporter or owner can reopen (e.g. it wasn't really fixed). Returns the
+-- old resolution photo path so the client can delete it.
+create or replace function public.reopen_report(p_report uuid)
+returns text language plpgsql security definer set search_path = public as $$
+declare r reports; me members;
+begin
+  select * into r from reports where id = p_report for update;
+  if not found then raise exception 'REPORT_NOT_FOUND'; end if;
+  me := _me(r.house_id);
+  if me.role <> 'owner' and me.id is distinct from _report_author(r.id) then raise exception 'NOT_ALLOWED'; end if;
+  update reports set status = 'open', resolved_by = null, resolved_at = null, resolution_note = null, resolution_photo = null
+   where id = r.id;
+  return r.resolution_photo;
+end $$;
+
+-- Reporter or owner can delete. Returns photo paths for cleanup.
+create or replace function public.delete_report(p_report uuid)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare r reports; me members;
+begin
+  select * into r from reports where id = p_report;
+  if not found then raise exception 'REPORT_NOT_FOUND'; end if;
+  me := _me(r.house_id);
+  if me.role <> 'owner' and me.id is distinct from _report_author(r.id) then raise exception 'NOT_ALLOWED'; end if;
+  delete from reports where id = r.id;
+  return to_jsonb(r.photos) || case when r.resolution_photo is null then '[]'::jsonb else jsonb_build_array(r.resolution_photo) end;
+end $$;
+
+-- ---------------------------------------------------------------------------
 -- Row level security. Everything is written through the functions above;
 -- direct table access is read-only and limited to your own house (used by
 -- realtime change notifications).
@@ -1002,6 +1162,9 @@ alter table public.tasks           enable row level security;
 alter table public.logs            enable row level security;
 alter table public.log_votes       enable row level security;
 alter table public.change_requests enable row level security;
+alter table public.reports         enable row level security;
+alter table public.report_authors  enable row level security;
+alter table public.report_agrees   enable row level security;
 
 drop policy if exists houses_read on public.houses;
 create policy houses_read on public.houses for select to authenticated using (public.is_member(id));
@@ -1019,6 +1182,11 @@ drop policy if exists votes_read on public.log_votes;
 create policy votes_read on public.log_votes for select to authenticated using (public.is_member(house_id));
 drop policy if exists requests_read on public.change_requests;
 create policy requests_read on public.change_requests for select to authenticated using (public.is_member(house_id));
+drop policy if exists reports_read on public.reports;
+create policy reports_read on public.reports for select to authenticated using (public.is_member(house_id));
+drop policy if exists report_agrees_read on public.report_agrees;
+create policy report_agrees_read on public.report_agrees for select to authenticated using (public.is_member(house_id));
+-- report_authors: intentionally no policy (keeps anonymous reporters private)
 
 -- ---------------------------------------------------------------------------
 -- Grants
@@ -1027,7 +1195,7 @@ do $$
 begin
   if exists (select 1 from pg_roles where rolname = 'authenticated') then
     execute 'revoke all on all tables in schema public from anon, authenticated';
-    execute 'grant select on public.houses, public.members, public.member_devices, public.sections, public.tasks, public.logs, public.log_votes, public.change_requests to authenticated';
+    execute 'grant select on public.houses, public.members, public.member_devices, public.sections, public.tasks, public.logs, public.log_votes, public.change_requests, public.reports, public.report_agrees to authenticated';
     execute 'revoke execute on all functions in schema public from public, anon';
     execute 'grant execute on all functions in schema public to authenticated';
     execute 'grant execute on function public.ping() to anon';
@@ -1043,7 +1211,7 @@ do $$
 declare t text;
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
-    foreach t in array array['houses','members','sections','tasks','logs','log_votes','change_requests'] loop
+    foreach t in array array['houses','members','sections','tasks','logs','log_votes','change_requests','reports','report_agrees'] loop
       if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t) then
         execute format('alter publication supabase_realtime add table public.%I', t);
       end if;

@@ -38,6 +38,12 @@ const MESSAGES = {
   NOT_ALLOWED: "You don't have permission to do that.",
   TOO_MANY_HOUSES: "You've reached the limit of homes on this device.",
   SECTION_NOT_FOUND: 'That section no longer exists.',
+  TITLE_REQUIRED: 'Give your report a short title.',
+  TOO_MANY_PHOTOS: 'You can attach up to 4 photos.',
+  SLOW_DOWN: "You've posted a lot of reports in the last hour. Try again later.",
+  REPORT_NOT_FOUND: 'That report was deleted.',
+  CANT_AGREE_OWN: "You can't “me too” a report you wrote or one about you.",
+  REPORT_CLOSED: 'That report is already resolved.',
 }
 
 export class AppError extends Error {

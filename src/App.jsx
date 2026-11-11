@@ -12,6 +12,7 @@ import HouseScreen from './screens/HouseScreen.jsx'
 import LogChoreSheet from './sheets/LogChoreSheet.jsx'
 import LogDetailSheet from './sheets/LogDetailSheet.jsx'
 import DemoBar from './components/DemoBar.jsx'
+import ReportDetailSheet, { ReportsPage } from './sheets/ReportDetailSheet.jsx'
 
 function readJoinCode() {
   const m = location.hash.match(/join=([A-Za-z0-9]{6})/)
@@ -139,6 +140,9 @@ function Shell(props) {
   const [logOpen, setLogOpen] = useState(false)
   const [logTask, setLogTask] = useState(null)
   const [detail, setDetail] = useState(null)
+  const [logMode, setLogMode] = useState('chore')
+  const [reportId, setReportId] = useState(null)
+  const [reportsOpen, setReportsOpen] = useState(false)
 
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
@@ -169,6 +173,9 @@ function Shell(props) {
 
   const openLog = (log) => setDetail(log.id)
   const detailLog = detail ? h.logs.find((l) => l.id === detail) : null
+  const detailReport = reportId ? h.reports.find((r) => r.id === reportId) : null
+  const newReport = () => { setLogTask(null); setLogMode('report'); setLogOpen(true) }
+  const reportProps = { onOpenReport: (r) => setReportId(r.id), onAllReports: () => setReportsOpen(true), onNewReport: newReport }
 
   return (
     <div className="app">
@@ -176,14 +183,16 @@ function Shell(props) {
         <span className="edge-title">{{ home: h.house.name, calendar: 'Calendar', ranks: 'Leaderboard', house: 'House' }[tab]}</span>
       </div>
       <main className="screen" key={tab}>
-        {tab === 'home' && <HomeScreen onOpenLog={openLog} onGo={setTab} onQuickLog={(id) => { setLogTask(id); setLogOpen(true) }} />}
+        {tab === 'home' && <HomeScreen onOpenLog={openLog} onGo={setTab} onQuickLog={(id) => { setLogTask(id); setLogMode('chore'); setLogOpen(true) }} {...reportProps} />}
         {tab === 'calendar' && <CalendarScreen onOpenLog={openLog} />}
         {tab === 'ranks' && <LeaderboardScreen onOpenLog={openLog} />}
-        {tab === 'house' && <HouseScreen {...props} />}
+        {tab === 'house' && <HouseScreen {...props} {...reportProps} />}
       </main>
-      <TabBar tab={tab} onTab={setTab} onLog={() => { setLogTask(null); setLogOpen(true) }} badge={h.isOwner ? h.pendingRequests.length : 0} />
-      <LogChoreSheet open={logOpen} initialTaskId={logTask} onClose={() => setLogOpen(false)} />
+      <TabBar tab={tab} onTab={setTab} onLog={() => { setLogTask(null); setLogMode('chore'); setLogOpen(true) }} badge={h.isOwner ? h.pendingRequests.length : 0} />
+      <LogChoreSheet open={logOpen} initialTaskId={logTask} initialMode={logMode} onClose={() => setLogOpen(false)} />
       <LogDetailSheet open={!!detailLog} log={detailLog} onClose={() => setDetail(null)} />
+      <ReportsPage open={reportsOpen} onClose={() => setReportsOpen(false)} onOpen={(r) => setReportId(r.id)} onNew={newReport} />
+      <ReportDetailSheet report={detailReport} onClose={() => setReportId(null)} />
     </div>
   )
 }

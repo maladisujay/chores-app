@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import Sheet from '../components/Sheet.jsx'
 import PhotoPicker from '../components/PhotoPicker.jsx'
-import { Avatar, Button, ChoreIcon, Stepper } from '../components/ui.jsx'
+import { Avatar, Button, ChoreIcon, Segmented, Stepper } from '../components/ui.jsx'
+import { useReportForm } from './ReportForm.jsx'
 import { useFeedback } from '../components/Feedback.jsx'
 import Icon from '../icons/Icon.jsx'
 import { useHouse, usePhotoUrls } from '../store.jsx'
@@ -26,7 +27,7 @@ export function groupTasks(tasks, sections) {
   return groups
 }
 
-export default function LogChoreSheet({ open, onClose, initialTaskId, editLog }) {
+export default function LogChoreSheet({ open, onClose, initialTaskId, editLog, initialMode = 'chore' }) {
   const h = useHouse()
   const { toast } = useFeedback()
   const { isOwner, me, house, tasks, sections, activeMembers, taskById, backend } = h
@@ -48,6 +49,8 @@ export default function LogChoreSheet({ open, onClose, initialTaskId, editLog })
   const [picking, setPicking] = useState(true)
   const [search, setSearch] = useState('')
   const [busy, setBusy] = useState(false)
+  const [mode, setMode] = useState('chore')
+  const report = useReportForm({ active: open && mode === 'report', onDone: onClose })
 
   // Reset every time the sheet opens
   useEffect(() => {
@@ -83,6 +86,7 @@ export default function LogChoreSheet({ open, onClose, initialTaskId, editLog })
     }
     setReason('')
     setSearch('')
+    setMode(editing ? 'chore' : initialMode)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
@@ -185,6 +189,21 @@ export default function LogChoreSheet({ open, onClose, initialTaskId, editLog })
   const pts = custom ? points : isOwner ? points : task?.points ?? 0
   const cta = editing ? (isOwner ? 'Save changes' : 'Send for approval') : hasChore ? `Log it · +${pts} pts` : 'Pick a chore'
 
+  const switcher = !editing && (
+    <div className="mode-switch">
+      <Segmented value={mode} onChange={setMode} options={[{ value: 'chore', label: 'Log chore' }, { value: 'report', label: 'Report issue' }]} />
+    </div>
+  )
+
+  if (mode === 'report' && !editing) {
+    return (
+      <Sheet open={open} onClose={onClose} title="Report an issue" tall footer={report.footer}>
+        {switcher}
+        {report.body}
+      </Sheet>
+    )
+  }
+
   return (
     <Sheet
       open={open}
@@ -200,6 +219,7 @@ export default function LogChoreSheet({ open, onClose, initialTaskId, editLog })
         </>
       }
     >
+      {switcher}
       {isOwner && (
         <div className="field-block">
           <label className="field-label">Who did it?</label>

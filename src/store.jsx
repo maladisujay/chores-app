@@ -24,12 +24,14 @@ export function HouseProvider({ backend, houseId, onLostAccess, children }) {
     }
     const run = (async () => {
       try {
-        const [house, logs, requests] = await Promise.all([
+        const [house, logs, requests, reports] = await Promise.all([
           backend.rpc('get_house', { p_house: houseId }),
           backend.rpc('get_logs', { p_house: houseId }),
           backend.rpc('get_requests', { p_house: houseId }),
+          // Reports are optional: an older database without them still loads.
+          backend.rpc('get_reports', { p_house: houseId }).catch(() => []),
         ])
-        const next = { ...house, logs, requests, loadedAt: Date.now() }
+        const next = { ...house, logs, requests, reports, loadedAt: Date.now() }
         setData(next)
         setError(null)
         try {
@@ -92,6 +94,8 @@ export function HouseProvider({ backend, houseId, onLostAccess, children }) {
       activeMembers: active,
       isOwner,
       pendingRequests: pending,
+      reports: data.reports || [],
+      openReports: (data.reports || []).filter((r) => r.status === 'open'),
       // Mutations go through here so the UI refreshes right away.
       call: async (fn, args) => {
         const r = await backend.rpc(fn, args)

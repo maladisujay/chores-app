@@ -12,7 +12,7 @@ import ChoresEditor from './ChoresEditor.jsx'
 import ApprovalsPage from './ApprovalsPage.jsx'
 import { groupTasks } from '../sheets/LogChoreSheet.jsx'
 
-export default function HouseScreen({ houses, onSwitchHouse, onAddHouse, onLeft, onHousesChanged }) {
+export default function HouseScreen({ houses, onSwitchHouse, onAddHouse, onLeft, onHousesChanged, onAllReports }) {
   const h = useHouse()
   const { house, me, isOwner, activeMembers, pendingRequests, tasks, backend } = h
   const { toast, confirm, prompt } = useFeedback()
@@ -69,12 +69,14 @@ export default function HouseScreen({ houses, onSwitchHouse, onAddHouse, onLeft,
           <Row icon="inbox" iconBg="#FF9F0A" label="Approvals" chevron onClick={() => setPage('approvals')} value={pendingRequests.length ? <span className="count-badge">{pendingRequests.length}</span> : 'None'} />
           <Row icon="sparkles" iconBg="#5E5CE6" label="Chores & points" chevron onClick={() => setPage('chores')} value={tasks.length} />
           <Row icon="users" iconBg="#30D158" label="Roommates" chevron onClick={() => setPage('members')} value={activeMembers.length} />
+          <Row icon="megaphone" iconBg="#E8590C" label="Reports" chevron onClick={onAllReports} value={h.openReports.length ? <span className="count-badge">{h.openReports.length}</span> : 'None open'} />
         </Group>
       )}
       {!isOwner && (
         <Group>
           <Row icon="sparkles" iconBg="#5E5CE6" label="Chores & points" chevron onClick={() => setPage('viewChores')} value={tasks.length} />
           <Row icon="users" iconBg="#30D158" label="Roommates" chevron onClick={() => setPage('members')} value={activeMembers.length} />
+          <Row icon="megaphone" iconBg="#E8590C" label="Reports" chevron onClick={onAllReports} value={h.openReports.length ? <span className="count-badge">{h.openReports.length}</span> : 'None open'} />
         </Group>
       )}
 

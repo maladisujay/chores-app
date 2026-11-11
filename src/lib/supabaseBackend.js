@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { toAppError } from './errors.js'
 
 const BUCKET = 'chore-photos'
-const TABLES = ['logs', 'log_votes', 'change_requests', 'tasks', 'sections', 'members']
+const TABLES = ['logs', 'log_votes', 'change_requests', 'tasks', 'sections', 'members', 'reports', 'report_agrees']
 
 export function createSupabaseBackend(url, key) {
   const sb = createClient(url, key, {

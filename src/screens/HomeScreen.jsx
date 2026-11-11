@@ -2,12 +2,13 @@ import { useMemo, useState } from 'react'
 import { useHouse } from '../store.jsx'
 import { Avatar, ChoreIcon, Empty } from '../components/ui.jsx'
 import LogRow from '../components/LogRow.jsx'
+import ReportRow from '../components/ReportRow.jsx'
 import Icon from '../icons/Icon.jsx'
 import { greeting, fmtDayLabel, relTime, plural } from '../lib/format.js'
 import { groupByDay, leaderboard, streak, staleChores, logScore } from '../lib/stats.js'
 import { haptic } from '../lib/haptics.js'
 
-export default function HomeScreen({ onOpenLog, onGo, onQuickLog }) {
+export default function HomeScreen({ onOpenLog, onGo, onQuickLog, onOpenReport, onAllReports, onNewReport }) {
   const h = useHouse()
   const { me, logs, house, activeMembers, isOwner, pendingRequests, requests } = h
   const [filter, setFilter] = useState('all')
@@ -108,6 +109,32 @@ export default function HomeScreen({ onOpenLog, onGo, onQuickLog }) {
           </span>
         </div>
       ))}
+
+      <section className="section">
+        <div className="section-head">
+          <h2>Reports</h2>
+          {h.reports.length > 0 && <button className="see-all" onClick={onAllReports}>See all</button>}
+        </div>
+        {h.openReports.length > 0 && (
+          <div className="glass list">
+            {h.openReports.slice(0, 3).map((r) => <ReportRow key={r.id} report={r} onClick={onOpenReport} />)}
+            {h.openReports.length > 3 && (
+              <button className="row tappable more-row" onClick={onAllReports}>
+                <span className="row-main"><span className="row-label accent">{h.openReports.length - 3} more open</span></span>
+                <Icon name="chevronR" size={16} className="row-chev" stroke={2.4} />
+              </button>
+            )}
+          </div>
+        )}
+        <button className="report-cta glass" onClick={onNewReport}>
+          <span className="report-cat" style={{ '--cat': '#E8590C' }}><Icon name="megaphone" size={20} stroke={2.2} /></span>
+          <span className="banner-text">
+            <b>{h.openReports.length ? 'Report something else' : 'Spotted something sus?'}</b>
+            <span>Report an undone chore, a mess or damage, with photos. You can stay anonymous.</span>
+          </span>
+          <Icon name="chevronR" size={16} stroke={2.4} />
+        </button>
+      </section>
 
       {stale.length > 0 && (
         <section className="section">

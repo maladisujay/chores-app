@@ -231,7 +231,7 @@ function Detail({ log, onClose }) {
   )
 }
 
-function PhotoViewer({ photo, onClose }) {
+export function PhotoViewer({ photo, onClose }) {
   const last = useRef(null)
   if (photo) last.current = photo
   const p = photo || last.current
