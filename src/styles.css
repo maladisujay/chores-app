@@ -273,10 +273,10 @@ button.lg:active:not(:disabled) { transform: scale(1.08); filter: brightness(1.0
 .log-row.voided .log-title { text-decoration: line-through; color: var(--label-2); }
 .log-ico { position: relative; flex: none; }
 .log-avatar { position: absolute; right: -5px; bottom: -5px; border-radius: 50%; box-shadow: 0 0 0 2px var(--card); display: flex; }
-.log-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.log-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .log-title { font-size: 17px; font-weight: 600; letter-spacing: -0.022em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.log-meta { font-size: 14px; color: var(--label-2); display: flex; gap: 4px; align-items: center; white-space: nowrap; letter-spacing: -0.012em; }
-.log-who { font-weight: 500; color: var(--label); overflow: hidden; text-overflow: ellipsis; max-width: 50%; }
+.log-meta { font-size: 13px; color: var(--label-2); display: flex; gap: 4px; align-items: center; white-space: nowrap; letter-spacing: -0.012em; }
+.log-who { font-weight: 400; color: var(--label-2); overflow: hidden; text-overflow: ellipsis; max-width: 50%; }
 .dot-sep { color: var(--label-3); }
 .log-flags { display: flex; gap: 4px; flex-wrap: wrap; }
 .log-flags:empty { display: none; }
