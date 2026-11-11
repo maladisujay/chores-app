@@ -153,31 +153,17 @@ function Detail({ log, onClose }) {
         )}
       </div>
 
-      {log.member_id !== me.id && !log.voided && (
+      {log.member_id !== me.id && !log.voided && (canVote || log.votes.length > 0) && (
         <div className="vote-card glass">
-          <div className="vote-top">
-            <div>
-              <b>Not done properly?</b>
-              <p className="muted small">
-                {log.vote_override
-                  ? 'The owner locked voting on this chore.'
-                  : voteClosed
-                    ? `Voting closed ${house.vote_window_days} days after the chore.`
-                    : needed > total - 1
-                      ? `A vote needs ${needed} of ${total} housemates, and ${m?.name || 'the doer'} can’t vote on their own chore — so it can’t pass until more people join. The owner can still mark it incomplete.`
-                      : `If ${needed} of ${total} housemates vote, ${m?.name || 'they'} loses these ${log.points} pts and gets a ${penaltyOf(log)} pt penalty.`}
-              </p>
-            </div>
-          </div>
-          <div className="vote-bar">
-            {Array.from({ length: needed }).map((_, i) => (
-              <i key={i} className={i < log.votes.length ? 'on' : ''} />
-            ))}
-          </div>
           <div className="vote-foot">
             <div className="stack-avatars">
-              {log.votes.map((id) => <Avatar key={id} member={memberById[id]} size={24} />)}
-              <span className="muted small">{log.votes.length} of {needed} votes</span>
+              <b>Not done properly?</b>
+              {log.votes.length > 0 && (
+                <>
+                  {log.votes.map((id) => <Avatar key={id} member={memberById[id]} size={24} />)}
+                  <span className="muted small">{log.votes.length}/{needed}</span>
+                </>
+              )}
             </div>
             {canVote && (
               <Button variant={iVoted ? 'glass' : 'danger-soft'} loading={busy === 'vote'} onClick={vote} className="btn-sm">
