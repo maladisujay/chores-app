@@ -487,6 +487,15 @@ select.field { background-image: linear-gradient(45deg, transparent 50%, var(--l
 .photo-tag { position: absolute; left: 8px; bottom: 8px; font-size: 12px; font-weight: 600; color: #fff; padding: 4px 10px; border-radius: 999px; background: rgba(0, 0, 0, 0.45); -webkit-backdrop-filter: blur(12px) saturate(160%); backdrop-filter: blur(12px) saturate(160%); }
 .photo-remove { position: absolute; top: -6px; right: -6px; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; background: rgba(40, 40, 46, 0.8); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); }
 .photo-remove::after { content: ''; position: absolute; inset: -8px; }
+.photo-pick.menu-open { z-index: 5; }
+.photo-pick.menu-open .photo-tile { transform: scale(0.97); filter: brightness(0.92); }
+.photo-menu { position: absolute; left: 6px; right: 6px; bottom: 6px; border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; animation: photo-menu-in 0.32s var(--spring); transform-origin: 50% 100%; }
+.photo-menu button { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 46px; padding: 10px 14px; font-size: 15px; font-weight: 500; color: var(--label); text-align: left; position: relative; z-index: 1; }
+.photo-menu button + button { border-top: 0.5px solid var(--sep); }
+.photo-menu button .ico { color: var(--tint); flex-shrink: 0; }
+.photo-menu button:active { background: rgba(127, 127, 127, 0.18); }
+@keyframes photo-menu-in { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .photo-menu { animation: none; } }
 
 /* ── Detail sheet ────────────────────────────────────────────────────────── */
 .detail-photos { display: grid; gap: 8px; margin-bottom: 16px; }
