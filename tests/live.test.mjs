@@ -70,6 +70,25 @@ try {
   const rm = await owner.storage.from('chore-photos').remove(removed)
   ok(!rm.error, 'owner removes photo')
 
+  // reports: anonymous report with a photo, about the owner
+  const rpath = `${hid}/${crypto.randomUUID()}.jpg`
+  ok(!(await sam.storage.from('chore-photos').upload(rpath, png, { contentType: 'image/png' })).error, 'report photo upload')
+  const ownerMember = H.me.id
+  const rep = await rpc(sam, 'create_report', { p_house: hid, p_category: 'mess', p_title: 'Live test report', p_details: null, p_about: ownerMember, p_task: null, p_photos: [rpath], p_anonymous: true })
+  const seen = await rpc(owner, 'get_reports', { p_house: hid })
+  ok(seen.length === 1 && seen[0].reporter_id === null && seen[0].mine === false, 'anonymous report hides author from owner')
+  const { data: rawRows, error: rawErr } = await owner.from('reports').select('*').eq('house_id', hid)
+  ok(!rawErr && rawRows.length === 1 && !('reporter_id' in rawRows[0]) && rawRows[0].shown_reporter === null, 'direct table read has no author ' + rawErr?.message)
+  const { data: authors } = await owner.from('report_authors').select('*')
+  ok((authors ?? []).length === 0, 'report authors unreadable')
+  await expectErr(rpc(owner, 'agree_report', { p_report: rep, p_agree: true }), 'CANT_AGREE_OWN', 'subject cannot me-too')
+  ok((await rpc(alex, 'agree_report', { p_report: rep, p_agree: true })) === 1, 'me too live')
+  await expectErr(rpc(stranger, 'get_reports', { p_house: hid }), 'NOT_MEMBER', 'stranger cannot read reports')
+  await rpc(owner, 'resolve_report', { p_report: rep, p_note: 'cleaned', p_photo: null })
+  const gone = await rpc(sam, 'delete_report', { p_report: rep })
+  ok(gone.includes(rpath), 'reporter deletes, photo returned')
+  ok(!(await sam.storage.from('chore-photos').remove(gone)).error, 'reporter removes own photo')
+
   // rejoin on second device with PIN
   const alex2 = mk(); await alex2.auth.signInAnonymously()
   ok((await rpc(alex2, 'rejoin_house', { p_code: code, p_member: P.members.find((m) => m.name === 'Alex').id, p_pin: '9999' })) === null, 'wrong pin')
