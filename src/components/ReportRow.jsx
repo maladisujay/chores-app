@@ -1,14 +1,12 @@
 import { Avatar } from './ui.jsx'
 import Icon from '../icons/Icon.jsx'
-import { useHouse, usePhotoUrls } from '../store.jsx'
+import { useHouse } from '../store.jsx'
 import { catOf } from '../lib/reports.js'
 import { relTime } from '../lib/format.js'
 
 export default function ReportRow({ report, onClick }) {
   const { memberById } = useHouse()
   const c = catOf(report.category)
-  const thumb = report.photos[0]
-  const urls = usePhotoUrls(thumb ? [thumb] : [])
   const who = report.anonymous ? null : memberById[report.reporter_id]
   const about = memberById[report.about_member]
   const resolved = report.status === 'resolved'
@@ -30,10 +28,9 @@ export default function ReportRow({ report, onClick }) {
           )}
           {about && <span className="flag flag-gray"><Avatar member={about} size={13} /> {about.name}</span>}
           {report.agrees.length > 0 && <span className="flag flag-blue"><Icon name="users" size={11} stroke={2.4} /> {report.agrees.length} agree</span>}
-          {report.photos.length > 1 && <span className="flag flag-gray"><Icon name="image" size={11} stroke={2.4} /> {report.photos.length}</span>}
+          {report.photos.length > 0 && <span className="flag flag-gray"><Icon name="image" size={11} stroke={2.4} /> {report.photos.length}</span>}
         </span>
       </span>
-      {thumb && <span className="log-thumb">{urls[thumb] ? <img src={urls[thumb]} alt="" loading="lazy" /> : <Icon name="image" size={18} />}</span>}
     </button>
   )
 }

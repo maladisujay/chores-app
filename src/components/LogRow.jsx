@@ -1,13 +1,12 @@
 import { Avatar, ChoreIcon, PointsPill } from './ui.jsx'
 import Icon from '../icons/Icon.jsx'
 import { fmtTime } from '../lib/format.js'
-import { useHouse, usePhotoUrls } from '../store.jsx'
+import { useHouse } from '../store.jsx'
 
 export default function LogRow({ log, onClick, showDate }) {
   const { memberById, activeMembers } = useHouse()
   const m = memberById[log.member_id]
-  const thumb = log.after_path || log.before_path
-  const urls = usePhotoUrls(thumb ? [thumb] : [])
+  const photoCount = (log.before_path ? 1 : 0) + (log.after_path ? 1 : 0)
   const late = new Date(log.created_at) - new Date(log.done_at) > 864e5
   const needed = Math.floor(activeMembers.filter((x) => x.claimed).length / 2) + 1
   return (
@@ -31,12 +30,10 @@ export default function LogRow({ log, onClick, showDate }) {
           )}
           {log.pending && <span className="flag flag-blue"><Icon name="hourglass" size={11} stroke={2.4} /> {log.pending.kind === 'delete' ? 'Delete requested' : 'Edit pending'}</span>}
           {late && <span className="flag flag-gray">Logged later</span>}
+          {photoCount > 0 && <span className="flag flag-gray" aria-label={`${photoCount} photo${photoCount > 1 ? 's' : ''}`}><Icon name="image" size={11} stroke={2.4} />{photoCount > 1 ? ` ${photoCount}` : ''}</span>}
           {log.note && <span className="flag flag-gray"><Icon name="note" size={11} stroke={2.4} /></span>}
         </span>
       </span>
-      {thumb && (
-        <span className="log-thumb">{urls[thumb] ? <img src={urls[thumb]} alt="" loading="lazy" /> : <Icon name="image" size={18} />}</span>
-      )}
       <PointsPill log={log} />
     </button>
   )
