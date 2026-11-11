@@ -218,7 +218,8 @@ button.lg:active:not(:disabled) { transform: scale(1.08); filter: brightness(1.0
 .stat-pill b { font-family: var(--font-rounded); font-size: 20px; line-height: 1; font-variant-numeric: tabular-nums; }
 .stat-pill span { font-size: 12px; color: var(--label-2); font-weight: 500; }
 .flame-on { color: #e8590c !important; }
-.mini-board { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; padding-top: 12px; border-top: 0.5px solid var(--sep); overflow: hidden; min-height: 44px; }
+.mini-board { grid-column: 1 / -1; position: relative; display: flex; align-items: center; gap: 14px; padding: 17px 6px 6px; margin: 0 -6px -6px; overflow: hidden; min-height: 55px; }
+.mini-board::before { content: ''; position: absolute; top: 0; left: 6px; right: 6px; border-top: 0.5px solid var(--sep); } /* room for the leader ring without clipping */
 .mini-entry { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 15px; font-variant-numeric: tabular-nums; }
 .mini-entry.me > span:last-child { color: var(--tint); }
 .mini-chev { margin-left: auto; color: var(--label-3); }
