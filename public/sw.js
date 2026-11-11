@@ -1,5 +1,5 @@
 // App-shell cache: instant launch from the home screen, always fetches fresh HTML when online.
-const CACHE = 'chores-v1'
+const CACHE = 'chores-v2'
 self.addEventListener('install', (e) => self.skipWaiting())
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()))
@@ -25,7 +25,7 @@ self.addEventListener('fetch', (e) => {
       (hit) =>
         hit ||
         fetch(req).then((res) => {
-          if (res.ok && (url.pathname.includes('/assets/') || /\.(png|svg|webmanifest)$/.test(url.pathname))) {
+          if (res.ok && (url.pathname.includes('/assets/') || /\.(png|svg)$/.test(url.pathname))) {
             const copy = res.clone()
             caches.open(CACHE).then((c) => c.put(req, copy))
           }
