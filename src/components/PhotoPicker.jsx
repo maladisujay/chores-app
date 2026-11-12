@@ -4,8 +4,10 @@ import { compressImage } from '../lib/image.js'
 import { haptic } from '../lib/haptics.js'
 import { Spinner } from './ui.jsx'
 import { useFeedback } from './Feedback.jsx'
+import { useHouse } from '../store.jsx'
 
-// Phones and tablets get a "Take Photo / Photo Library" menu; desktops go straight to the file picker.
+// Members can only take a live photo with the camera (no gallery uploads), so photos are fresh and original.
+// The owner can also pick from the library. Desktops (no camera capture) fall back to the file picker.
 const hasCamera = () => typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
 
 // value: { blob, url } for a new photo, { path, url } for an existing one, or null
@@ -16,6 +18,7 @@ export default function PhotoPicker({ label, value, onChange, required, hint }) 
   const [busy, setBusy] = useState(false)
   const [menu, setMenu] = useState(false)
   const { toast } = useFeedback()
+  const cameraOnly = !useHouse()?.isOwner
 
   useEffect(() => {
     if (!menu) return
@@ -52,6 +55,7 @@ export default function PhotoPicker({ label, value, onChange, required, hint }) 
     if (busy) return
     if (!hasCamera()) return library.current?.click()
     haptic()
+    if (cameraOnly) return camera.current?.click()
     setMenu((m) => !m)
   }
   const choose = (ref) => {
@@ -61,7 +65,7 @@ export default function PhotoPicker({ label, value, onChange, required, hint }) 
 
   return (
     <div ref={root} className={`photo-pick ${value ? 'has' : ''} ${menu ? 'menu-open' : ''}`}>
-      <button type="button" className="photo-tile" onClick={open} aria-haspopup={hasCamera() ? 'menu' : undefined} aria-expanded={menu}>
+      <button type="button" className="photo-tile" onClick={open} aria-haspopup={hasCamera() && !cameraOnly ? 'menu' : undefined} aria-expanded={menu}>
         {value?.url ? (
           <img src={value.url} alt={label} />
         ) : busy ? (
